@@ -2,27 +2,201 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Native App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مصحف القيام المطور - رياض الغامدي</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f2f2f7; color: #000; }
-        header { background: #fff; padding: 20px; text-align: center; border-bottom: 1px solid #d1d1d6; position: sticky; top: 0; }
-        .container { padding: 20px; }
-        .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        button { background: #007aff; color: #fff; border: none; width: 100%; padding: 15px; border-radius: 10px; font-size: 17px; font-weight: 600; cursor: pointer; }
-        button:active { opacity: 0.7; }
+        :root { --gold: #d4af37; --green: #1a472a; --red: #c0392b; --bg: #f8f9fa; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: var(--bg); overflow: hidden; }
+
+        /* حاوية المصحف */
+        #quran-container { width: 100%; height: 100vh; overflow-y: auto; text-align: center; background: #fff; padding-top: 20px; }
+        #quran-img { width: 100%; max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        /* الزر العائم */
+        #toggle-btn {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 80px; height: 80px; background: var(--green); color: var(--gold);
+            border: 3px solid var(--gold); border-radius: 50%; z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); cursor: pointer;
+        }
+
+        /* لوحة التحكم */
+        #control-panel {
+            position: fixed; bottom: -100%; left: 0; width: 100%; height: 88%;
+            background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(15px); z-index: 2500;
+            border-radius: 35px 35px 0 0; transition: bottom 0.4s ease-out;
+            display: flex; flex-direction: column; padding: 15px; box-sizing: border-box;
+            border-top: 5px solid var(--green); overflow-y: auto;
+        }
+        #control-panel.show { bottom: 0; }
+
+        /* واجهة النصوص */
+        #text-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 3000; display: none; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto;
+        }
+
+        .font-ctrl { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .font-btn { width: 50px; height: 50px; font-size: 24px; font-weight: bold; border-radius: 10px; border: 2px solid var(--green); background: #fff; }
+
+        .stats-grid { display: flex; justify-content: space-around; margin: 10px 0; gap: 10px; }
+        .stat-column { display: flex; flex-direction: column; align-items: center; flex: 1; background: #fff; padding: 10px; border-radius: 15px; border: 1px solid #eee; }
+        .stat-val { font-size: 3.5rem; font-weight: bold; color: var(--green); line-height: 1; }
+
+        .btn-massive {
+            width: 100%; padding: 20px; background: var(--green); color: white;
+            border: none; border-radius: 18px; font-size: 1.8rem; font-weight: bold; margin: 10px 0;
+        }
+        .btn-alert { background: var(--red) !important; }
+
+        .btn-secondary { width: 100%; padding: 12px; background: #f4f4f4; border: none; border-radius: 12px; font-size: 1.1rem; margin: 3px 0; font-weight: bold; color: var(--green); }
+        .nav-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .nav-btn { flex: 1; padding: 15px; font-size: 1.2rem; font-weight: bold; background: #fff; border: 2px solid var(--green); border-radius: 12px; }
+
+        .text-content { font-size: 1.3rem; line-height: 1.8; color: #333; text-align: right; white-space: pre-line; }
+        .close-overlay { background: var(--red); color: white; padding: 12px; border-radius: 10px; border: none; margin-bottom: 15px; width: 100%; font-weight: bold; }
+        
+        select { padding: 8px; border-radius: 8px; border: 2px solid var(--green); font-weight: bold; }
+        .dynamic-font { transition: 0.1s; }
     </style>
 </head>
 <body>
-    <header><strong>تطبيقي الجديد</strong></header>
-    <div class="container">
-        <div class="card">
-            <h3>مرحباً بك!</h3>
-            <p>هذه واجهة ويب تبدو كتطبيق نيتف.</p>
-        </div>
-        <button onclick="alert('تم بنجاح!')">زر تفاعلي</button>
+
+    <div id="toggle-btn" onclick="togglePanel()">
+        <span style="font-size: 30px;">📖</span>
+        <span style="font-size: 14px; font-weight: bold;">القائمة</span>
     </div>
+
+    <div id="control-panel">
+        <div style="width:50px; height:5px; background:#ccc; margin: 0 auto 10px; border-radius: 5px;"></div>
+        
+        <div class="font-ctrl">
+            <button class="font-btn" onclick="adjustFont(3)">+</button>
+            <span class="dynamic-font" style="font-weight: bold;">حجم الخط</span>
+            <button class="font-btn" onclick="adjustFont(-3)">-</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-column">
+                <span id="rkNow" class="stat-val dynamic-font">0</span>
+                <span class="stat-label dynamic-font">الركعة</span>
+                <button class="btn-secondary" style="font-size: 0.9rem;" onclick="resetCurrent()">تصفير</button>
+            </div>
+            <div class="stat-column">
+                <span id="rkTotal" class="stat-val dynamic-font" style="color:var(--red)">0</span>
+                <span class="stat-label dynamic-font">الإجمالي</span>
+                <button class="btn-secondary" style="color:var(--red); font-size: 0.9rem;" onclick="resetTotal()">تصفير</button>
+            </div>
+        </div>
+
+        <div style="margin: 10px 0; text-align: center;" class="dynamic-font">
+            الركعات: 
+            <select id="targetSystem" onchange="checkAlert()">
+                <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+            </select>
+            | قلب: 
+            <select id="pageStep">
+                <option value="0.5">نصف</option><option value="1" selected>1</option><option value="2">2</option>
+            </select>
+        </div>
+
+        <button class="btn-massive dynamic-font" id="mainActionBtn" onclick="handleCount()">عد ركعة + قلب</button>
+        
+        <div class="nav-row">
+            <button class="nav-btn dynamic-font" onclick="changePage(1)">التالي ▶</button>
+            <button class="nav-btn dynamic-font" onclick="changePage(-1)">◀ السابق</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+            <button class="btn-secondary" onclick="showText('qunot')">🤲 القنوت</button>
+            <button class="btn-secondary" onclick="showText('khatm')">📜 الختمة</button>
+        </div>
+        <button class="btn-secondary" onclick="showText('azkar')">📿 أذكار الصباح والمساء</button>
+
+        <button class="btn-secondary" style="margin-top: 10px; background: #444; color: white;" onclick="togglePanel()">إغلاق ✖</button>
+    </div>
+
+    <div id="text-overlay">
+        <button class="close-overlay" onclick="closeOverlay()">عودة للمصحف ↩</button>
+        <div id="display-title" style="font-size: 1.5rem; font-weight: bold; color: var(--green); border-bottom: 2px solid var(--gold); margin-bottom: 10px;"></div>
+        <div id="display-content" class="text-content"></div>
+    </div>
+
+    <div id="quran-container" onclick="closePanel()">
+        <img id="quran-img" src="" alt="جاري التحميل...">
+    </div>
+
+<script>
+    const texts = {
+        qunot: { title: "دعاء القنوت", content: "اللهم اهدنا فيمن هديت، وعافنا فيمن عافيت، وتولنا فيمن توليت، وبارك لنا فيما أعطيت، وقنا شر ما قضيت، فإنك تقضي ولا يقضى عليك، وإنه لا يذل من واليت، ولا يعز من عاديت، تباركت ربنا وتعاليت.\n\nاللهم إنا نستعينك ونستغفرك ونثني عليك الخير ولا نكفرك، ونخلع ونترك من يفجرك. اللهم إياك نعبد ولك نصلي ونسجد، وإليك نسعى ونحفد، نرجو رحمتك ونخشى عذابك إن عذابك بالجد بالكفار ملحق." },
+        khatm: { title: "دعاء ختم القرآن", content: "اللهم ارحمني بالقرآن واجعله لي إماماً ونوراً وهدى ورحمة. اللهم ذكرني منه ما نسيت وعلمني منه ما جهلت، وارزقني تلاوته آناء الليل وأطراف النهار، واجعله لي حجة يا رب العالمين.\n\nاللهم أصلح لي ديني الذي هو عصمة أمري، وأصلح لي دنياي التي فيها معاشي، وأصلح لي آخرتي التي فيها معادي، واجعل الحياة زيادة لي في كل خير واجعل الموت راحة لي من كل شر." },
+        azkar: { title: "الأذكار الأساسية", content: "• آية الكرسي\n• المعوذات (3 مرات)\n• أصبحنا وأصبح الملك لله والحمد لله\n• اللهم بك أصبحنا وبك أمسينا\n• بسم الله الذي لا يضر مع اسمه شيء (3 مرات)\n• رضيت بالله ربا وبالإسلام دينا وبمحمد نبيا." }
+    };
+
+    let currentRakat = 0, totalRakat = 0;
+    let currentPage = parseInt(localStorage.getItem('lastPage')) || 1;
+    let baseFontSize = parseInt(localStorage.getItem('userFontSize')) || 18;
+
+    function togglePanel() { document.getElementById('control-panel').classList.toggle('show'); }
+    function closePanel() { document.getElementById('control-panel').classList.remove('show'); }
+    function showText(type) {
+        document.getElementById('display-title').innerText = texts[type].title;
+        document.getElementById('display-content').innerText = texts[type].content;
+        document.getElementById('text-overlay').style.display = 'flex';
+    }
+    function closeOverlay() { document.getElementById('text-overlay').style.display = 'none'; }
+
+    function adjustFont(val) {
+        baseFontSize += val;
+        if(baseFontSize < 12) baseFontSize = 12;
+        localStorage.setItem('userFontSize', baseFontSize);
+        applyFontSize();
+    }
+
+    function applyFontSize() {
+        document.querySelectorAll('.stat-val').forEach(el => el.style.fontSize = (baseFontSize * 3.5) + "px");
+        document.querySelectorAll('.dynamic-font').forEach(el => {
+            if(!el.classList.contains('stat-val')) el.style.fontSize = baseFontSize + "px";
+        });
+    }
+
+    function updatePage() {
+        if(currentPage < 1) currentPage = 1;
+        let pageStr = Math.floor(currentPage).toString().padStart(3, '0');
+        document.getElementById('quran-img').src = `https://surahquran.com/img/pages-quran/page${pageStr}.png`;
+        localStorage.setItem('lastPage', currentPage);
+        document.getElementById('quran-container').scrollTop = 0;
+    }
+
+    function changePage(dir) { currentPage += dir; updatePage(); }
+    
+    function handleCount() {
+        currentRakat++; totalRakat++;
+        document.getElementById('rkNow').innerText = currentRakat;
+        document.getElementById('rkTotal').innerText = totalRakat;
+        currentPage += parseFloat(document.getElementById('pageStep').value);
+        updatePage();
+        checkAlert();
+        setTimeout(closePanel, 700);
+    }
+
+    function checkAlert() {
+        const target = parseInt(document.getElementById('targetSystem').value);
+        const btn = document.getElementById('mainActionBtn');
+        if (currentRakat >= target) {
+            btn.innerText = "تمت الركعات (سلّم)";
+            btn.classList.add('btn-alert');
+        } else {
+            btn.innerText = "عد ركعة + قلب";
+            btn.classList.remove('btn-alert');
+        }
+    }
+
+    function resetCurrent() { currentRakat = 0; document.getElementById('rkNow').innerText = "0"; checkAlert(); }
+    function resetTotal() { if(confirm("تصفير إجمالي الليلة؟")) { totalRakat = 0; document.getElementById('rkTotal').innerText = "0"; } }
+
+    window.onload = () => { updatePage(); applyFontSize(); };
+</script>
 </body>
 </html>
-
-
